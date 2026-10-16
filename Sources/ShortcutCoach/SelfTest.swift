@@ -69,6 +69,9 @@ enum SelfTest {
             print("  skip Finder not running")
         }
 
+        // Toast.show offers mute only when the model has a hint ID, so the preview needs one to look like a real hint.
+        check(ToastModel.sample.hintID != nil, "hint preview shows mute")
+
         if let outDir {
             render(ToastView(model: .sample, onClose: {}, onMute: {}), to: outDir + "/toast-hint.png")
             let habit = Hint(id: "habit|ctrl-C", kind: .habit, bundleID: nil, appName: "Windows habit", title: "Copy",

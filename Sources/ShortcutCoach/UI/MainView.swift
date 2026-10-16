@@ -191,10 +191,11 @@ struct Card<Content: View>: View {
 }
 
 extension ToastModel {
+    /// The hint ID only gives the preview its mute button, like a real hint. No record has it, so muting just dismisses.
     static var sample: ToastModel {
         ToastModel(style: .hint, bundleID: "com.apple.finder", symbol: "folder", eyebrow: "Use the shortcut next time",
                    title: "New Folder", keycapGroups: [["⇧", "⌘", "N"]],
-                   footer: "Finder · picked from a menu 3× · shortcut used 1×")
+                   footer: "Finder · picked from a menu 3× · shortcut used 1×", hintID: "preview|sample")
     }
 }
 
