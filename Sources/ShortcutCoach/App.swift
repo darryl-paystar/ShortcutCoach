@@ -127,14 +127,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
     /// The ⌘ icon, with a dot in its corner while a downloaded update waits. Still a template, so the
     /// dot takes the menu bar's color like the icon does.
     private func setStatusIcon(updateReady: Bool) {
-        guard let symbol = NSImage(systemSymbolName: "command.square", accessibilityDescription: "Shortcut Coach") else { return }
+        // 17pt draws a 16pt square, in line with other menu-bar icons; the default size draws 12pt.
+        guard let symbol = NSImage(systemSymbolName: "command.square", accessibilityDescription: "Shortcut Coach")?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 17, weight: .regular)) else { return }
         guard updateReady else {
             statusItem.button?.image = symbol
             return
         }
         let image = NSImage(size: symbol.size, flipped: false) { rect in
             symbol.draw(in: rect)
-            let d = rect.width * 0.4
+            let d = rect.width * 0.32
             let dot = NSRect(x: rect.maxX - d, y: rect.maxY - d, width: d, height: d)
             // A cleared ring keeps the dot apart from the square's corner.
             NSGraphicsContext.current?.compositingOperation = .clear
