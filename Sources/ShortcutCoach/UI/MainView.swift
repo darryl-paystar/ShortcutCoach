@@ -52,7 +52,6 @@ enum MainSection: String, CaseIterable, Identifiable, Hashable {
 
 struct MainView: View {
     @ObservedObject private var nav = Navigation.shared
-    @ObservedObject private var updates = Updates.shared
 
     var body: some View {
         NavigationSplitView {
@@ -71,8 +70,6 @@ struct MainView: View {
                     Label { Text(MainSection.settings.title) } icon: {
                         IconTile(symbol: MainSection.settings.tileSymbol, color: MainSection.settings.color, size: 20)
                     }
-                    // The Updates section there has Install and Relaunch.
-                    .badge(updates.readyVersion == nil ? 0 : 1)
                     .tag(MainSection.settings)
                 }
             }
