@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import ServiceManagement
 import SwiftUI
 
@@ -69,6 +70,7 @@ final class Navigation: ObservableObject {
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuDelegate, NSMenuItemValidation {
     private var statusItem: NSStatusItem!
     private var window: NSWindow?
+    private var updateObserver: AnyCancellable?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Prefs.registerDefaults()
@@ -114,10 +116,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "command.square", accessibilityDescription: "Shortcut Coach")
+        updateObserver = Updates.shared.$readyVersion.sink { [weak self] version in
+            self?.setStatusIcon(updateReady: version != nil)
+        }
         let menu = NSMenu()
         menu.delegate = self
         statusItem.menu = menu
+    }
+
+    /// The ⌘ icon, with a dot in its corner while a downloaded update waits. Still a template, so the
+    /// dot takes the menu bar's color like the icon does.
+    private func setStatusIcon(updateReady: Bool) {
+        guard let symbol = NSImage(systemSymbolName: "command.square", accessibilityDescription: "Shortcut Coach") else { return }
+        guard updateReady else {
+            statusItem.button?.image = symbol
+            return
+        }
+        let image = NSImage(size: symbol.size, flipped: false) { rect in
+            symbol.draw(in: rect)
+            let d = rect.width * 0.4
+            let dot = NSRect(x: rect.maxX - d, y: rect.maxY - d, width: d, height: d)
+            // A cleared ring keeps the dot apart from the square's corner.
+            NSGraphicsContext.current?.compositingOperation = .clear
+            NSBezierPath(ovalIn: dot.insetBy(dx: -1.5, dy: -1.5)).fill()
+            NSGraphicsContext.current?.compositingOperation = .sourceOver
+            NSColor.black.setFill()
+            NSBezierPath(ovalIn: dot).fill()
+            return true
+        }
+        image.isTemplate = true
+        image.accessibilityDescription = "Shortcut Coach, update ready"
+        statusItem.button?.image = image
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {

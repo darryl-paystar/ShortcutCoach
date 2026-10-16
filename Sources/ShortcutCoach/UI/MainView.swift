@@ -52,6 +52,7 @@ enum MainSection: String, CaseIterable, Identifiable, Hashable {
 
 struct MainView: View {
     @ObservedObject private var nav = Navigation.shared
+    @ObservedObject private var updates = Updates.shared
 
     var body: some View {
         NavigationSplitView {
@@ -70,6 +71,8 @@ struct MainView: View {
                     Label { Text(MainSection.settings.title) } icon: {
                         IconTile(symbol: MainSection.settings.tileSymbol, color: MainSection.settings.color, size: 20)
                     }
+                    // The Updates section there has Install and Relaunch.
+                    .badge(updates.readyVersion == nil ? 0 : 1)
                     .tag(MainSection.settings)
                 }
             }
@@ -201,6 +204,7 @@ extension ToastModel {
 struct OverviewView: View {
     @ObservedObject private var store = StatsStore.shared
     @ObservedObject private var permission = Permission.shared
+    @ObservedObject private var updates = Updates.shared
     @ObservedObject private var coach = Coach.shared
     @AppStorage(Prefs.Key.enabled) private var enabled = true
     @State private var filter = 0
@@ -220,6 +224,7 @@ struct OverviewView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 if !permission.trusted { PermissionCard() }
+                if let version = updates.readyVersion { UpdateCard(version: version) }
 
                 GroupedBox {
                     HStack(spacing: 0) {
@@ -414,6 +419,31 @@ struct PermissionCard: View {
         config.createsNewApplicationInstance = true
         NSWorkspace.shared.openApplication(at: url, configuration: config) { _, _ in
             DispatchQueue.main.async { NSApp.terminate(nil) }
+        }
+    }
+}
+
+struct UpdateCard: View {
+    let version: String
+
+    var body: some View {
+        GroupedBox {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Version \(version) is ready").font(.system(size: 13, weight: .semibold))
+                    Text("It installs the next time you quit Shortcut Coach. Install it now and the app relaunches.")
+                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Install and Relaunch") { Updates.shared.installNow() }
+                        .controlSize(.small)
+                        .padding(.top, 4)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(12)
         }
     }
 }
