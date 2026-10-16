@@ -1,0 +1,87 @@
+# Every push to main that touches the app publishes a GitHub release. Installed copies poll
+# releases/latest/download/appcast.xml hourly and update themselves.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Sources/**
+      - Resources/**
+      - Package.swift
+      - Package.resolved
+      - scripts/build.sh
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # build.sh numbers versions by commit count; notes need the previous tag
+          fetch-tags: true
+
+      - name: Skip if this commit is already released
+        id: check
+        run: |
+          TAG="v$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Resources/Info.plist).$(git rev-list --count HEAD)"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$TAG is already released"
+          fi
+
+      - name: Import signing certificate
+        if: steps.check.outputs.skip != 'true'
+        env:
+          SIGNING_CERT_P12: ${{ secrets.SIGNING_CERT_P12 }}
+          SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/signing.keychain-db"
+          KC_PASS=$(openssl rand -hex 16)
+          echo "$SIGNING_CERT_P12" | base64 --decode > "$RUNNER_TEMP/release.p12"
+          security create-keychain -p "$KC_PASS" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KC_PASS" "$KC"
+          security import "$RUNNER_TEMP/release.p12" -k "$KC" -P "$SIGNING_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KC_PASS" "$KC" > /dev/null
+          rm "$RUNNER_TEMP/release.p12"
+          echo "SIGN_KEYCHAIN=$KC" >> "$GITHUB_ENV"
+
+      - name: Build
+        if: steps.check.outputs.skip != 'true'
+        env:
+          ARCHS: arm64 x86_64
+          SIGN_IDENTITY: Shortcut Coach Release Signing
+        run: scripts/build.sh
+
+      - name: Publish release
+        if: steps.check.outputs.skip != 'true'
+        env:
+          TAG: ${{ steps.check.outputs.tag }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          APP="build/Shortcut Coach.app"
+          ditto -c -k --keepParent "$APP" ShortcutCoach.zip
+          PREV=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          git log --no-merges --format='- %s' ${PREV:+$PREV..}HEAD > notes.md
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle.key"
+          SPARKLE_KEY_FILE="$RUNNER_TEMP/sparkle.key" scripts/make-appcast.sh "$APP" ShortcutCoach.zip \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/ShortcutCoach.zip" notes.md > appcast.xml
+          rm "$RUNNER_TEMP/sparkle.key"
+          gh release create "$TAG" ShortcutCoach.zip appcast.xml scripts/install.sh \
+            --target "$GITHUB_SHA" --title "Shortcut Coach ${TAG#v}" --notes-file notes.md
+
+      - name: Remove signing keychain
+        if: always() && env.SIGN_KEYCHAIN != ''
+        run: security delete-keychain "$SIGN_KEYCHAIN"
