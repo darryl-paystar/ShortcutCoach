@@ -33,3 +33,10 @@ When a change sets a new pattern (a color, component, layout or copy rule), upda
 
 **Checking UI**
 `--selftest` renders previews with `ImageRenderer`, which draws AppKit-backed controls (switches, link buttons, menus) as yellow 🚫 placeholders and the app icon as a folder. That's expected. Judge layout in the running app.
+
+## Releases and versioning
+
+Before touching versions, signing or the release workflow, read `README.md` → Releases. On every change:
+- A push to `main` that changes the app is a release: colleagues' installed copies offer it within the hour. Work in progress stays on a branch until it's ready to ship.
+- The version comes from the commit count, so a change needs no version edit. Docs-only commits count but don't release, so release numbers skip, which is expected. `Info.plist`'s major.minor changes only for a deliberate version jump.
+- `main` only grows: land work as new commits (merge or fast-forward). The commit count is the build number Sparkle compares, so a rewritten history would hide updates from installed copies.
