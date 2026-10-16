@@ -75,14 +75,15 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           APP="build/Shortcut Coach.app"
-          ditto -c -k --keepParent "$APP" ShortcutCoach.zip
+          ditto -c -k --keepParent "$APP" ShortcutCoach.zip # Sparkle updates and install.sh
+          scripts/make-dmg.sh "$APP" ShortcutCoach.dmg      # first installs by hand
           PREV=$(git describe --tags --abbrev=0 2>/dev/null || true)
           git log --no-merges --format='- %s' ${PREV:+$PREV..}HEAD > notes.md
           printf '%s' "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle.key"
           SPARKLE_KEY_FILE="$RUNNER_TEMP/sparkle.key" scripts/make-appcast.sh "$APP" ShortcutCoach.zip \
             "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/ShortcutCoach.zip" notes.md > appcast.xml
           rm "$RUNNER_TEMP/sparkle.key"
-          gh release create "$TAG" ShortcutCoach.zip appcast.xml scripts/install.sh \
+          gh release create "$TAG" ShortcutCoach.dmg ShortcutCoach.zip appcast.xml scripts/install.sh \
             --target "$GITHUB_SHA" --title "Shortcut Coach ${TAG#v}" --notes-file notes.md
 
       - name: Remove signing keychain

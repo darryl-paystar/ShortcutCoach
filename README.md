@@ -19,13 +19,23 @@ It also counts how often you then **use** each shortcut and celebrates when one 
 **Hold ⌘** for about a second in any app to see an overlay of all its menu shortcuts. The main window has live per-app shortcut lists, cheat sheets, a Windows → Mac table and tips.
 
 ## Install
-Needs macOS 15 or later. In Terminal:
+Shortcut Coach needs macOS 15 or later. Install it either way below.
+
+**Download the disk image**
+1. Download **[ShortcutCoach.dmg](https://github.com/darryl-paystar/ShortcutCoach/releases/latest/download/ShortcutCoach.dmg)**, the latest release, and open it.
+2. Drag **Shortcut Coach** onto **Applications**, then eject the disk image.
+3. Open Shortcut Coach from Applications. macOS blocks this first launch, because the app is signed with a self-signed certificate rather than an Apple Developer ID. Click **Done**.
+4. Open **System Settings → Privacy & Security**, scroll down to **Security**, and click **Open Anyway** next to “Shortcut Coach was blocked”. Confirm with your password or Touch ID, then click **Open**.
+
+You only do this once; updates open normally.
+
+**Or use Terminal**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/darryl-paystar/ShortcutCoach/main/scripts/install.sh | bash
 ```
-This puts the latest release in `~/Applications` and opens it. The welcome tour then asks for **Accessibility** access, which the app needs to see clicks and menus. After that it keeps itself up to date. Every hour it checks for a new release and downloads it in the background. When one is ready, a toast offers **Install and Relaunch**. The same option is at the top of the menu-bar menu and in Settings → Updates. If you leave it, the update installs the next time you quit.
+This puts the latest release in `~/Applications` and opens it, with no Open Anyway step: `curl` downloads aren't quarantined, and the script checks the app's signature before installing.
 
-The app is signed with a self-signed certificate rather than an Apple Developer ID. If you download `ShortcutCoach.zip` from [Releases](https://github.com/darryl-paystar/ShortcutCoach/releases) by hand instead, macOS blocks the first launch. Choose **System Settings → Privacy & Security → Open Anyway**. The script avoids this because `curl` downloads aren't quarantined, and it checks the app's signature before installing.
+**After installing**, the welcome tour asks for **Accessibility** access, which the app needs to see clicks and menus. From then on it keeps itself up to date. Every hour it checks for a new release and downloads it in the background. When one is ready, a toast offers **Install and Relaunch**, and the menu-bar icon gets a dot. The same option is at the top of the menu-bar menu, on Overview and in Settings → Updates. If you leave it, the update installs the next time you quit.
 
 ## Build from source
 ```bash
@@ -49,7 +59,7 @@ Self-test (live Finder menus, key parsing, preview PNGs):
 ```
 
 ## Releases
-Every push to `main` that changes the app (`Sources/`, `Resources/`, `Package.swift`, `scripts/build.sh`) runs [the release workflow](.github/workflows/release.yml). It builds a universal app, signs it with the release certificate, and publishes a GitHub release `v0.1.<commit count>` with `ShortcutCoach.zip` and a Sparkle `appcast.xml`. Installed copies read `releases/latest/download/appcast.xml` and offer the update once it's downloaded. To bump the major or minor version, edit `CFBundleShortVersionString` in `Resources/Info.plist`. The workflow can also be run by hand from the Actions tab.
+Every push to `main` that changes the app (`Sources/`, `Resources/`, `Package.swift`, `scripts/build.sh`) runs [the release workflow](.github/workflows/release.yml). It builds a universal app, signs it with the release certificate, and publishes a GitHub release `v0.1.<commit count>` with `ShortcutCoach.dmg` for installing by hand, `ShortcutCoach.zip` (which updates and `install.sh` download), and a Sparkle `appcast.xml`. Installed copies read `releases/latest/download/appcast.xml` and offer the update once it's downloaded. To bump the major or minor version, edit `CFBundleShortVersionString` in `Resources/Info.plist`. The workflow can also be run by hand from the Actions tab.
 
 Repository secrets:
 - `SIGNING_CERT_P12` and `SIGNING_CERT_PASSWORD` hold the "Shortcut Coach Release Signing" identity, base64-encoded. Keep it: a build signed by anything else loses every user's Accessibility grant, and `install.sh` refuses it.
