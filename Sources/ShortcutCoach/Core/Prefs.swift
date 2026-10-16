@@ -34,6 +34,7 @@ enum Prefs {
         static let tipIndex = "tipIndex"
         static let lastTipAt = "lastTipAt"
         static let relaunchedForUpdate = "relaunchedForUpdate"
+        static let lastRunBuild = "lastRunBuild"
     }
 
     static let d = UserDefaults.standard

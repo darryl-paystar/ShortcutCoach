@@ -132,6 +132,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let header = NSMenuItem(title: "Shortcut Coach \(Updates.version) — \(status)", action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
+        if let version = Updates.shared.readyVersion {
+            menu.addItem(item("Install Update \(version) and Relaunch", #selector(installUpdate)))
+        }
         menu.addItem(.separator())
 
         menu.addItem(item("Open Shortcut Coach…", #selector(showWindow(_:)), key: "o"))
@@ -183,6 +186,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     @objc func checkForUpdates() { Updates.shared.checkForUpdates(nil) }
 
+    @objc func installUpdate() { Updates.shared.installNow() }
+
     @objc func showSettings() {
         Navigation.shared.section = .settings
         showWindow(nil)
@@ -217,7 +222,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
 
     func windowWillClose(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        Updates.shared.installIfIdle()
     }
 
     private func buildMainMenu() {

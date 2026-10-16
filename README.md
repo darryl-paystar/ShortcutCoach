@@ -23,7 +23,7 @@ Needs macOS 15 or later. In Terminal:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/darryl-paystar/ShortcutCoach/main/scripts/install.sh | bash
 ```
-This puts the latest release in `~/Applications` and opens it. The welcome tour then asks for **Accessibility** access, which the app needs to see clicks and menus. After that it updates itself: it checks for a new release every hour and installs it in the background while its window is closed. You can turn that off in Settings → Updates.
+This puts the latest release in `~/Applications` and opens it. The welcome tour then asks for **Accessibility** access, which the app needs to see clicks and menus. After that it keeps itself up to date. Every hour it checks for a new release and downloads it in the background. When one is ready, a toast offers **Install and Relaunch**. The same option is at the top of the menu-bar menu and in Settings → Updates. If you leave it, the update installs the next time you quit.
 
 The app is signed with a self-signed certificate rather than an Apple Developer ID. If you download `ShortcutCoach.zip` from [Releases](https://github.com/darryl-paystar/ShortcutCoach/releases) by hand instead, macOS blocks the first launch. Choose **System Settings → Privacy & Security → Open Anyway**. The script avoids this because `curl` downloads aren't quarantined, and it checks the app's signature before installing.
 
@@ -49,7 +49,7 @@ Self-test (live Finder menus, key parsing, preview PNGs):
 ```
 
 ## Releases
-Every push to `main` that changes the app (`Sources/`, `Resources/`, `Package.swift`, `scripts/build.sh`) runs [the release workflow](.github/workflows/release.yml). It builds a universal app, signs it with the release certificate, and publishes a GitHub release `v0.1.<commit count>` with `ShortcutCoach.zip` and a Sparkle `appcast.xml`. Installed copies read `releases/latest/download/appcast.xml`. To bump the major or minor version, edit `CFBundleShortVersionString` in `Resources/Info.plist`. The workflow can also be run by hand from the Actions tab.
+Every push to `main` that changes the app (`Sources/`, `Resources/`, `Package.swift`, `scripts/build.sh`) runs [the release workflow](.github/workflows/release.yml). It builds a universal app, signs it with the release certificate, and publishes a GitHub release `v0.1.<commit count>` with `ShortcutCoach.zip` and a Sparkle `appcast.xml`. Installed copies read `releases/latest/download/appcast.xml` and offer the update once it's downloaded. To bump the major or minor version, edit `CFBundleShortVersionString` in `Resources/Info.plist`. The workflow can also be run by hand from the Actions tab.
 
 Repository secrets:
 - `SIGNING_CERT_P12` and `SIGNING_CERT_PASSWORD` hold the "Shortcut Coach Release Signing" identity, base64-encoded. Keep it: a build signed by anything else loses every user's Accessibility grant, and `install.sh` refuses it.

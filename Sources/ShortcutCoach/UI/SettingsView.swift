@@ -26,7 +26,8 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.toastDuration) private var toastDuration = 5.0
     @AppStorage(Prefs.Key.debugLogging) private var debugLogging = false
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
-    @State private var autoUpdate = Updates.shared.installsAutomatically
+    @ObservedObject private var updates = Updates.shared
+    @State private var autoDownload = Updates.shared.downloadsAutomatically
     @State private var confirmReset = false
 
     var body: some View {
@@ -140,15 +141,23 @@ struct SettingsView: View {
             AppListSection(key: Prefs.Key.ignoredApps, title: "Never coach in these apps",
                            footnote: "No hints of any kind — mouse or keyboard — while one of these apps is in front.")
 
-            if Updates.shared.isAvailable {
+            if updates.isAvailable {
                 Section {
-                    Toggle(isOn: $autoUpdate) {
-                        Text("Install updates automatically")
-                        Text("New versions install in the background and relaunch the app while its window is closed. Off, you're asked first.")
+                    if let version = updates.readyVersion {
+                        LabeledContent {
+                            Button("Install and Relaunch") { updates.installNow() }
+                        } label: {
+                            Text("Version \(version) is ready")
+                            Text("Otherwise it installs the next time you quit.")
+                        }
                     }
-                    .onChange(of: autoUpdate) { Updates.shared.installsAutomatically = autoUpdate }
+                    Toggle(isOn: $autoDownload) {
+                        Text("Download updates automatically")
+                        Text("New versions download in the background, and you choose when to install them. Off, you're asked before each download.")
+                    }
+                    .onChange(of: autoDownload) { updates.downloadsAutomatically = autoDownload }
                     LabeledContent("Version \(Updates.version)") {
-                        Button("Check for Updates…") { Updates.shared.checkForUpdates(nil) }
+                        Button("Check for Updates…") { updates.checkForUpdates(nil) }
                     }
                 } header: {
                     Text("Updates")
