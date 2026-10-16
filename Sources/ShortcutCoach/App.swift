@@ -129,7 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         else if !Prefs.enabled { status = "Paused" }
         else if Coach.shared.isMonitoring { status = "Coaching is on" }
         else { status = "Starting…" }
-        let header = NSMenuItem(title: "Shortcut Coach — \(status)", action: nil, keyEquivalent: "")
+        let header = NSMenuItem(title: "Shortcut Coach \(Updates.version) — \(status)", action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
         menu.addItem(.separator())
