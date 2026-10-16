@@ -33,11 +33,15 @@ scripts/build.sh --install
 ```
 This builds `build/Shortcut Coach.app`, copies it to `~/Applications` and launches it. Then grant **System Settings → Privacy & Security → Accessibility → Shortcut Coach**.
 
-A self-signed **"Shortcut Coach Local Signing"** certificate is in your login keychain. macOS only accepts it once it's trusted for code signing, and that needs your password:
+`build.sh` signs with the first of these it finds in your keychain:
+1. **Shortcut Coach Release Signing**, the identity releases use. Local builds and releases then share one Accessibility grant.
+2. **Shortcut Coach Local Signing**.
+3. Otherwise ad-hoc. Every rebuild then changes the signature, so Shortcut Coach has to be removed (−) and re-added in the Accessibility list each time.
+
+`SIGN_IDENTITY` overrides the choice. Neither certificate needs to be trusted, because the Accessibility grant pins the certificate's hash. That grant belongs to one certificate, though. After switching to a build signed with a different one, clear it and grant again:
 ```bash
-security add-trusted-cert -p codeSign -k ~/Library/Keychains/login.keychain-db scripts/local-signing-cert.pem
+tccutil reset Accessibility local.shortcutcoach
 ```
-After that, `build.sh` signs with it automatically and the Accessibility grant survives rebuilds. Until then it signs ad-hoc, so every rebuild needs Shortcut Coach removed (−) and re-added in the Accessibility list. `SIGN_IDENTITY` overrides the choice. To remove the certificate, open Keychain Access → login → My Certificates.
 
 Self-test (live Finder menus, key parsing, preview PNGs):
 ```bash

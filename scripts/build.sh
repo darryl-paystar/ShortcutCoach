@@ -1,9 +1,10 @@
 #!/bin/bash
 # Builds "Shortcut Coach.app" into ./build. Usage: scripts/build.sh [--install]
 #   --install  copies the app to ~/Applications and (re)launches it.
-# Signs with the local "Shortcut Coach Local Signing" certificate when it's in the keychain, so the
-# Accessibility permission survives rebuilds. Override with SIGN_IDENTITY (looked up in SIGN_KEYCHAIN
-# when set); falls back to ad-hoc ("-").
+# Signs with the "Shortcut Coach Release Signing" identity when it's in the keychain, the one releases use,
+# so local builds and releases share one Accessibility grant that survives rebuilds and updates. Then
+# "Shortcut Coach Local Signing", then ad-hoc ("-"). Override with SIGN_IDENTITY (looked up in
+# SIGN_KEYCHAIN when set).
 # ARCHS="arm64 x86_64" builds a universal binary (releases do; the default is arm64 only).
 # The version is Info.plist's major.minor plus the commit count (0.1.42), and the count is also
 # CFBundleVersion, the number Sparkle compares, so a local build of HEAD matches HEAD's release.
@@ -34,10 +35,13 @@ BUILD=$(git rev-list --count HEAD 2>/dev/null || echo 0)
 VERSION="$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" Resources/Info.plist).$BUILD"
 /usr/libexec/PlistBuddy -c "Set CFBundleShortVersionString $VERSION" -c "Set CFBundleVersion $BUILD" "$APP/Contents/Info.plist"
 
-# Only once it's trusted for code signing (security find-identity -v lists it); macOS rejects
-# Accessibility grants for apps signed with an untrusted self-signed certificate.
-if [ -z "${SIGN_IDENTITY:-}" ] && security find-identity -v -p codesigning | grep -q "Shortcut Coach Local Signing"; then
-  SIGN_IDENTITY="Shortcut Coach Local Signing"
+# Neither certificate needs to be trusted: the Accessibility grant pins the certificate's hash, not its trust.
+# So no -v here, which would list trusted identities only.
+if [ -z "${SIGN_IDENTITY:-}" ]; then
+  IDENTITIES=$(security find-identity -p codesigning)
+  for id in "Shortcut Coach Release Signing" "Shortcut Coach Local Signing"; do
+    if grep -q "\"$id\"" <<< "$IDENTITIES"; then SIGN_IDENTITY=$id; break; fi
+  done
 fi
 codesign --force ${SIGN_KEYCHAIN:+--keychain "$SIGN_KEYCHAIN"} --sign "${SIGN_IDENTITY:--}" --identifier local.shortcutcoach "$APP"
 codesign --verify --deep --strict "$APP"
