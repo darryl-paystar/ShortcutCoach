@@ -54,6 +54,7 @@ struct MainView: View {
     @ObservedObject private var nav = Navigation.shared
 
     var body: some View {
+        // The sidebar always shows: no toggle here, and AppDelegate.pinSidebar() stops the divider collapsing it.
         NavigationSplitView {
             List(selection: Binding<MainSection?>(get: { nav.section }, set: { if let s = $0 { nav.section = s } })) {
                 Section {
@@ -74,6 +75,7 @@ struct MainView: View {
                 }
             }
             .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 260)
+            .toolbar(removing: .sidebarToggle)
         } detail: {
             Group {
                 switch nav.section {

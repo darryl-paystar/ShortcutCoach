@@ -247,6 +247,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
+        DispatchQueue.main.async { [weak self] in self?.pinSidebar() }
+    }
+
+    /// Keeps the sidebar from collapsing when its divider is dragged all the way left; it stops at 190pt instead.
+    /// NavigationSplitView has no setting for either, so they're set on the AppKit split view. (Re-opening a
+    /// collapsed sidebar made macOS flash the toolbar's » overflow button. Its minimum width came from the
+    /// sidebar button, which went with it; navigationSplitViewColumnWidth's min isn't enforced on its own.)
+    private func pinSidebar() {
+        func splitView(in view: NSView) -> NSSplitView? {
+            if let split = view as? NSSplitView { return split }
+            return view.subviews.lazy.compactMap(splitView(in:)).first
+        }
+        guard let content = window?.contentView, let split = splitView(in: content),
+              let controller = split.delegate as? NSSplitViewController else {
+            Log.info("Sidebar split view not found; it can still collapse")
+            return
+        }
+        guard let sidebar = controller.splitViewItems.first else { return }
+        sidebar.canCollapse = false
+        sidebar.minimumThickness = 190
     }
 
     func windowWillClose(_ notification: Notification) {

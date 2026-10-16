@@ -280,12 +280,22 @@ struct ToastView: View {
                 }
                 .padding(.leading, indent)
             }
-            if let footer = model.footer {
-                Text(footer)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
-                    .padding(.leading, indent)
+            if model.footer != nil || onMute != nil {
+                HStack(spacing: 8) {
+                    if let footer = model.footer {
+                        Text(footer)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    // Always shown on hints: after a repeat, muting is the control people look for.
+                    if let onMute {
+                        ToastIconButton(symbol: "bell.slash", help: "Don't show this hint again", action: onMute)
+                            .padding(.vertical, -4)
+                    }
+                }
+                .padding(.leading, indent)
             }
         }
         .padding(.horizontal, 14)
@@ -294,17 +304,12 @@ struct ToastView: View {
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(model.style == .learned ? Color.brandWash : .clear))
         .glassCard(cornerRadius: 16)
         .overlay(alignment: .topTrailing) {
-            // Controls appear on hover only, so the resting toast stays clean.
-            HStack(spacing: 2) {
-                if let onMute {
-                    ToastIconButton(symbol: "bell.slash", help: "Don't show this hint again", action: onMute)
-                }
-                ToastIconButton(symbol: "xmark", help: "Dismiss", action: onClose)
-            }
-            .padding(6)
-            .background(Capsule().fill(.regularMaterial))
-            .offset(x: 6, y: -10)
-            .opacity(hovering ? 1 : 0)
+            // Close appears on hover only, so the resting toast stays clean.
+            ToastIconButton(symbol: "xmark", help: "Dismiss", action: onClose)
+                .padding(6)
+                .background(Capsule().fill(.regularMaterial))
+                .offset(x: 6, y: -10)
+                .opacity(hovering ? 1 : 0)
         }
         .onHover { inside in withAnimation(.easeOut(duration: 0.15)) { hovering = inside } }
         .shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 4)
